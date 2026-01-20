@@ -3,9 +3,9 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config');
-
-const { signupSchema, signinSchema } = require('../types');
-const { User } = require('../db');
+const { authMiddleware } = require('../middleware');
+const { signupSchema, signinSchema, updateSchema } = require('../types');
+const { User, Account } = require('../db');
 
 
 router.post('/signup', async(req, res)=>{
@@ -41,6 +41,12 @@ router.post('/signup', async(req, res)=>{
         userId
     }, JWT_SECRET);
 
+    // Create a new account for the user with a random balance
+    await Account.create({
+        userId,
+        balance: 1 + Math.random() * 10000
+    })
+
     res.status(200).json({
         message: 'User created successfully',
         token: token
@@ -48,7 +54,7 @@ router.post('/signup', async(req, res)=>{
 
 });
 
-router.get('/signin', async(req, res)=>{
+router.post('/signin', async(req, res)=>{
     const payload = req.body;
     const pasrsedPayload = signinSchema.safeParse(payload);
     if(!pasrsedPayload.success){
@@ -75,9 +81,52 @@ router.get('/signin', async(req, res)=>{
     }
 
     res.status(411).json({
-        message: 'Invalid username or password'
+        message: 'Error while logging in'
     });
     
 });
+
+router.put('/update', authMiddleware, async(req, res)=>{
+    const payload = req.body;
+    const parsedPayload = updateSchema.safeParse(payload);
+    if(!parsedPayload.success){
+        return res.status(411).json({
+            message: 'Invalid request payload'
+        });
+    }
+
+    await User.updateOne(req.body,{
+        _id: req.userId
+    })
+
+    res.status(200).json({
+        message: 'User updated successfully'
+    });
+});
+
+router.get("/bulk", async (req, res) => {
+    const filter = req.query.filter || "";
+
+    const users = await User.find({
+        $or: [{
+            firstName: {
+                "$regex": filter
+            }
+        }, {
+            lastName: {
+                "$regex": filter
+            }
+        }]
+    })
+
+    res.json({
+        user: users.map(user => ({
+            _id: user._id,
+            username: user.username,
+            firstName: user.firstName,
+            lastName: user.lastName,
+        }))
+    })
+})
 
 module.exports = router;
