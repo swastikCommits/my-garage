@@ -12,7 +12,7 @@ router.post('/signup', async(req, res)=>{
     const payload = req.body;
     const parsedPayload = signupSchema.safeParse(payload);
     if(!parsedPayload.success){
-        res.status(411).json({
+        return res.status(411).json({
             message: 'Invalid request payload'
         });
     }
