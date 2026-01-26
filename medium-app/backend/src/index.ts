@@ -1,32 +1,56 @@
 import { Hono } from 'hono'
-import { PrismaClient } from './generated/prisma/client'
-import { withAccelerate } from '@prisma/extension-accelerate'
+
+import { userRouter } from './routes/user'
+import { blogRouter } from './routes/blog'
 
 const app = new Hono<{
   Bindings: {
-    DATABASE_URL: string
+    DATABASE_URL: string,
+    JWT_SECRET: string
+  },
+  Variables: {
+    userId: string
   }
 }>()
 
-app.post('/api/v1/signup', (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl : c.env.DATABASE_URL,
-}).$extends(withAccelerate({}))
-  return c.text('Signup!')
-})
-app.post('/api/v1/signin', (c) => {
-  return c.text('Signin!')
-})
-app.post('/api/vi/blog', (c) => {
-  return c.text('!')
-})
-app.get('/api/v1/blog/:id', (c) => {
-  const id = c.req.param('id');
-  console.log(id);
-  return c.text(`Blog ID: ${id}`)
-})
-app.put('/api/v1/blog', (c) => {
-  return c.text('Hello Hono!')
-})
+app.route('/api/v1/user', userRouter);
+app.route('/api/v1/blog', blogRouter);
 
-export default app
+// app.use("*", async (c) => {
+//   const prisma = new PrismaClient({
+//     accelerateUrl : c.env?.DATABASE_URL,
+// }).$extends(withAccelerate({}))
+//   c.set('prisma', prisma);
+// })
+
+// app.use('/api/v1/blog/*', async (c, next) => {
+// 	const authHeader = c.req.header('Authorization');
+// 	if (!authHeader || !authHeader.startsWith('Bearer ')) {
+// 		c.status(401);
+// 		return c.json({ error: "unauthorized" });
+// 	}
+	
+// 	const token = authHeader.split(' ')[1];
+// 	if (!token) {
+// 		c.status(401);
+// 		return c.json({ error: "unauthorized" });
+// 	}
+	
+// 	try {
+// 		const payload = await verify(token, c.env.JWT_SECRET, 'HS256');
+// 		if (!payload) {
+// 			c.status(401);
+// 			return c.json({ error: "unauthorized" });
+// 		}
+  
+// 		const typedPayload = payload as { id: string };
+// 		c.set('userId', typedPayload.id);
+// 		await next()
+// 	} catch (error) {
+// 		c.status(401);
+// 		return c.json({ error: "unauthorized" });
+// 	}
+// })
+
+
+export default app;
