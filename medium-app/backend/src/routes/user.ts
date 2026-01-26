@@ -3,7 +3,6 @@ import { PrismaClient } from '../generated/prisma/client'
 import { withAccelerate } from '@prisma/extension-accelerate'
 import { sign, verify, decode } from 'hono/jwt'
 
-
 export const userRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string,
@@ -16,8 +15,9 @@ export const userRouter = new Hono<{
 
 userRouter.post('/signup', async (c) => {
     const prisma = new PrismaClient({
-      accelerateUrl : c.env?.DATABASE_URL,
-  }).$extends(withAccelerate({}))
+        //@ts-ignore
+        datasourceUrl: c.env?.DATABASE_URL
+    }).$extends(withAccelerate())
   
   const body = await c.req.json();
   try {
@@ -43,8 +43,9 @@ userRouter.post('/signup', async (c) => {
   
 userRouter.post('/signin', async (c) => {
     const prisma = new PrismaClient({
-      accelerateUrl : c.env?.DATABASE_URL,
-  }).$extends(withAccelerate({}))
+        //@ts-ignore
+        datasourceUrl: c.env?.DATABASE_URL
+    }).$extends(withAccelerate())
   
     const body = await c.req.json();
     try{
