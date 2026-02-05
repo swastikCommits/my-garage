@@ -1,3 +1,9 @@
-// Database package entry point
+import { PrismaClient } from "./generated/prisma/client";
 
-export * from "./generated/prisma/client";
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+
+export const db = globalForPrisma.prisma || new PrismaClient({} as any);
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+
+export { PrismaClient };
